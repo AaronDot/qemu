@@ -199,10 +199,10 @@ typedef struct AioPolledEvent {
 } AioPolledEvent;
 
 struct AioContext {
-    GSource source;
+    GSource source;	//glib中的GSource，每个自定义的事件源第一个成员都是GSource结构成员
 
     /* Used by AioContext users to protect from multi-threaded access.  */
-    QemuRecMutex lock;
+    QemuRecMutex lock;	//QEMU中的互斥锁，用来保护多线程下对AioContext中成员的访问
 
     /*
      * Keep track of readers and writers of the block layer graph.
@@ -213,7 +213,7 @@ struct AioContext {
     struct BdrvGraphRWlock *bdrv_graph;
 
     /* The list of registered AIO handlers.  Protected by ctx->list_lock. */
-    AioHandlerList aio_handlers;
+    AioHandlerList aio_handlers;	//链表头，所有加入到AioContext事件源的fd的事件处理函数都挂到这个链表上
 
     /* The list of AIO handlers to be deleted.  Protected by ctx->list_lock. */
     AioHandlerList deleted_aio_handlers;
@@ -245,7 +245,7 @@ struct AioContext {
      * Instead, the aio_poll calls include both the prepare and the
      * dispatch phase, hence a simple counter is enough for them.
      */
-    uint32_t notify_me;
+    uint32_t notify_me;	//块设备层的IO同步时处理QEMU下半部
 
     /* A lock to protect between QEMUBH and AioHandler adders and deleter,
      * and to ensure that no callbacks are removed while we're walking and
@@ -254,7 +254,7 @@ struct AioContext {
     QemuLockCnt list_lock;
 
     /* Bottom Halves pending aio_bh_poll() processing */
-    BHList bh_list;
+    BHList bh_list;	//QEMU下半部链表
 
     /* Chained BH list slices for each nested aio_bh_poll() call */
     QSIMPLEQ_HEAD(, BHListSlice) bh_slice_list;
@@ -272,7 +272,7 @@ struct AioContext {
      * in the docs/aio_notify_accept.promela formal model.
      */
     bool notified;
-    EventNotifier notifier;
+    EventNotifier notifier;	//事件通知对象，在块设备进行同步且需要调用BH时用到
 
     QSLIST_HEAD(, Coroutine) scheduled_coroutines;
     QEMUBH *co_schedule_bh;
@@ -300,7 +300,7 @@ struct AioContext {
     /* TimerLists for calling timers - one per clock type.  Has its own
      * locking.
      */
-    QEMUTimerListGroup tlg;
+    QEMUTimerListGroup tlg;	//管理挂到该事件源的定时器
 
     /* Number of AioHandlers without .io_poll() */
     int poll_disable_cnt;

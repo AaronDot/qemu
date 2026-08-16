@@ -1,0 +1,33 @@
+main()	system/main.c
+|->qemu_default_main()
+   |->qemu_main_loop()	system/runstate.c
+      |->main_loop_wait(false)	util/main-loop.c
+         |->qemu_soonest_timeout() 计算最小的timeout值，从寄存器列表中获得，表示监听事件时最多让主循环阻塞的时间,timeout使QEMU能及时处理定时器到期事件
+         |->os_host_main_loop_wait()
+            |->glib_pollfds_fill() 获取所有监听的fd,并计算最小的超时时间	
+               |->g_main_context_prepare() 为主循环的监听做准备
+               |->g_main_context_query() 在循环中获取需要监听的fd(所有fd保存在全局变量 gpollfds数组中，fd数量在glib_n_poll_fds)，返回最小的timeout
+            |->释放QEMU大锁
+            |->qemu_poll_ns()  util/qemu-timer.c 会阻塞主线程，返回表示有文件fd上发生事件或表示一个超时
+               |->ppoll() CONFIG_PPOLL
+               |->g_poll(() glib跨平台poll函数，监听文件上发生的事件
+            |->glib_pollfds_poll() 事件分发处理
+               |->g_main_context_check() 检测事件(glib框架)
+               |->g_main_context_dispatch() 事件分发
+
+
+aio_context_new() util/async.c 创建AioContext函数
+|->g_source_new() 创建分配AioContext结构ctx  aio_source_funcs{}
+|->event_notifier_init() 初始化代表该事件源的事件通知对象ctx->notifier
+|->aio_context_setup() 设置ctx->notifier对应的事件通知函数
+   |->aio_set_fd_handler() 添加/删除事件源中的一个fd，加入到aio_handlers链表
+      |->find_aio_handler() 查找当前事件源ctx是否已有fd
+
+aio_ctx_dispatch() util/async.c aio事件分发函数
+|->aio_dispatch() util/aio-posix.c
+   |->aio_bh_poll() BH的处理
+   |->aio_dispatch_ready_handlers() 处理文件fd列表中有事件的fd
+      |->变量定义与赋值：node->pfd.revents->fd发生的事件;node->pfd.events->注册时指定需要接受的事件;revents->fd接收到的事件
+      |->G_IO_IN:调用注册的fd->io_read()
+      |->G_IO_OUT:调用注册的fd->io_write()
+      |->已删除的fd：删除该节点

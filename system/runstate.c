@@ -937,6 +937,7 @@ static bool main_loop_should_exit(int *status)
     return false;
 }
 
+//主循环
 int qemu_main_loop(void)
 {
     int status = EXIT_SUCCESS;

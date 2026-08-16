@@ -422,6 +422,7 @@ aio_ctx_finalize(GSource *source)
     qemu_lockcnt_destroy(&ctx->list_lock);
 }
 
+//AioContext事件源的回调函数
 static GSourceFuncs aio_source_funcs = {
     aio_ctx_prepare,
     aio_ctx_check,
